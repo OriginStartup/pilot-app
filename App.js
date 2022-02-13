@@ -21,6 +21,7 @@ import {
   Button,
   TouchableOpacity,
   Linking,
+  PermissionsAndroid,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -29,6 +30,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
+import Contacts from 'react-native-contacts';
 
 function Home({navigation}) {
   return (
@@ -91,27 +93,56 @@ function QrGenerator({navigation}) {
 }
 
 function QrScanner() {
+  const [qr, setQr] = useState('');
+
+  const newPerson = {
+    givenName: 'Lari',
+    phoneNumbers: [
+      {
+        label: 'mobile',
+        number: '(555) 555-5555',
+      },
+    ],
+  };
+
   const onSuccess = e => {
     Linking.openURL(e.data).catch(err =>
       console.error('An error occured', err),
     );
   };
+
+  const onRead = e => {
+    setQr(e.data);
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS, {
+      title: 'Contacts',
+      message: 'This app would like to view your contacts.',
+      buttonPositive: 'Please accept bare mortal',
+    })
+      .then(Contacts.addContact(newPerson))
+      .catch(e => {
+        console.log(e);
+      });
+  };
+
   return (
-    <QRCodeScanner
-      onRead={onSuccess}
-      flashMode={RNCamera.Constants.FlashMode.off}
-      topContent={
-        <Text style={styles.centerText}>
-          Go to <Text style={styles.textBold}>wikipedia.org/wiki/QR_code</Text>{' '}
-          on your computer and scan the QR code.
-        </Text>
-      }
-      bottomContent={
+    <View>
+      <QRCodeScanner
+        onRead={onRead}
+        flashMode={RNCamera.Constants.FlashMode.off}
+        topContent={
+          <Text style={styles.centerText}>
+            Go to{' '}
+            <Text style={styles.textBold}>wikipedia.org/wiki/QR_code</Text> on
+            your computer and scan the QR code.
+          </Text>
+        }
+      />
+      {qr != '' && (
         <TouchableOpacity style={styles.buttonTouchable}>
-          <Text style={styles.buttonText}>OK. Got it!</Text>
+          <Text style={styles.buttonText}>{qr}</Text>
         </TouchableOpacity>
-      }
-    />
+      )}
+    </View>
   );
 }
 
@@ -159,6 +190,23 @@ const styles = StyleSheet.create({
     marginRight: 10,
     margin: 10,
     borderWidth: 1,
+  },
+  centerText: {
+    flex: 1,
+    fontSize: 18,
+    padding: 32,
+    color: '#777',
+  },
+  textBold: {
+    fontWeight: '500',
+    color: '#000',
+  },
+  buttonText: {
+    fontSize: 21,
+    color: 'rgb(0,122,255)',
+  },
+  buttonTouchable: {
+    padding: 16,
   },
 });
 
