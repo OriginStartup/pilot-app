@@ -118,7 +118,12 @@ function QrScanner() {
       message: 'This app would like to view your contacts.',
       buttonPositive: 'Please accept bare mortal',
     })
-      .then(Contacts.addContact(newPerson))
+      .then(
+        Contacts.addContact(newPerson),
+        Linking.openURL(
+          'whatsapp://send?text=hello&phone=+55 (71) 982435206',
+        ).catch(err => console.error('An error occured', err)),
+      )
       .catch(e => {
         console.log(e);
       });
