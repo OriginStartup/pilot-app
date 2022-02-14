@@ -215,15 +215,18 @@ function QrScanner() {
     const data = JSON.parse(e.data);
     setQrContact(data);
     console.log(data);
+  };
+
+  const saveContact = () => {
     PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS, {
       title: 'Contacts',
       message: 'This app would like to view your contacts.',
       buttonPositive: 'Please accept bare mortal',
     })
       .then(
-        Contacts.addContact(data),
+        Contacts.addContact(qrContact),
         Linking.openURL(
-          `whatsapp://send?text=Hello ${data.givenName}&phone=${data.phoneNumbers[0].number}`,
+          `whatsapp://send?text=Hello ${qrContact.givenName}&phone=${qrContact.phoneNumbers[0].number}`,
         ).catch(err => console.error('An error occured', err)),
       )
       .catch(e => {
@@ -232,24 +235,22 @@ function QrScanner() {
   };
 
   return (
-    <View>
-      <QRCodeScanner
-        onRead={onRead}
-        flashMode={RNCamera.Constants.FlashMode.off}
-        topContent={
-          <Text style={styles.centerText}>
-            Go to{' '}
-            <Text style={styles.textBold}>wikipedia.org/wiki/QR_code</Text> on
-            your computer and scan the QR code.
-          </Text>
-        }
-      />
-      {qrContact && (
-        <TouchableOpacity style={styles.buttonTouchable}>
-          <Text style={styles.buttonText}>{qrContact.givenName}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+    <SafeAreaView>
+      <ScrollView>
+        <View style={styles.container}>
+          <QRCodeScanner
+            onRead={onRead}
+            flashMode={RNCamera.Constants.FlashMode.off}
+          />
+        </View>
+        {qrContact && (
+          <View style={styles.footer}>
+            <Text style={styles.centerText}>{qrContact.givenName}</Text>
+            <Button title="Save contact" onPress={saveContact} />
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -317,6 +318,16 @@ const styles = StyleSheet.create({
   },
   buttonTouchable: {
     padding: 16,
+  },
+  footer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
+    fontSize: 18,
+    padding: 32,
+    color: '#777',
+    marginTop: 38,
   },
 });
 
