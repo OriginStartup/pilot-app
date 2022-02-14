@@ -117,32 +117,41 @@ function Home({navigation}) {
         placeholder="Digite seu numero"
         placeholderTextColor={'#808080'}
       />
-      <Button title="Salvar" onPress={saveMyContact} />
-      {/* test to see storage data */}
-      <Button title="Ver dados" onPress={seeData} />
-      <Button
-        title="Go to QRGenerator"
-        onPress={() =>
-          navigation.navigate('Generator', {
-            userName: myContact.givenName,
-            userNumber: myContact.phoneNumbers[0].number,
-          })
-        }
-      />
+      <View style={{margin: 10}}>
+        <Button title="Salvar" onPress={saveMyContact} />
+        {/* test to see storage data */}
+        <Button title="Ver dados" onPress={seeData} />
+        <Button
+          title="Go to QRGenerator"
+          onPress={() =>
+            navigation.navigate('Generator', {
+              userName: myContact.givenName,
+              userNumber: myContact.phoneNumbers[0].number,
+            })
+          }
+        />
+      </View>
     </View>
   );
 }
 
 function QrGenerator({route, navigation}) {
   const {userName, userNumber} = route.params;
-  const [inputText, setInputText] = useState('');
-  const [qrValue, setQrValue] = useState('');
+  const [qrValue, setQrValue] = useState({
+    givenName: userName,
+    phoneNumbers: [
+      {
+        label: 'mobile',
+        number: userNumber,
+      },
+    ],
+  });
 
   return (
     <SafeAreaView style={{flex: 1}}>
       <View style={styles.containerQr}>
         <QRCode
-          value={qrValue ? qrValue : 'NA'}
+          value={JSON.stringify(qrValue)}
           size={250}
           color={'black'}
           backgroundColor="white"
@@ -157,7 +166,17 @@ function QrGenerator({route, navigation}) {
         <Text style={styles.text}>{userNumber}</Text>
         <View style={{margin: 10}}>
           <Button
-            onPress={() => setQrValue(userNumber)}
+            onPress={() =>
+              setQrValue({
+                givenName: userName,
+                phoneNumbers: [
+                  {
+                    label: 'mobile',
+                    number: userNumber,
+                  },
+                ],
+              })
+            }
             title="Gerar QR Code"
           />
           <Button
@@ -169,10 +188,6 @@ function QrGenerator({route, navigation}) {
             onPress={() => navigation.navigate('Scanner')}
           />
           <Button title="Go back" onPress={() => navigation.goBack()} />
-          <Button
-            title="Go back to first screen in stack"
-            onPress={() => navigation.popToTop()}
-          />
         </View>
       </View>
     </SafeAreaView>
@@ -180,17 +195,15 @@ function QrGenerator({route, navigation}) {
 }
 
 function QrScanner() {
-  const [qr, setQr] = useState('');
-
-  const newPerson = {
-    givenName: 'Lari',
+  const [qrContact, setQrContact] = useState({
+    givenName: '',
     phoneNumbers: [
       {
         label: 'mobile',
-        number: '(555) 555-5555',
+        number: '',
       },
     ],
-  };
+  });
 
   const onSuccess = e => {
     Linking.openURL(e.data).catch(err =>
@@ -199,16 +212,18 @@ function QrScanner() {
   };
 
   const onRead = e => {
-    setQr(e.data);
+    const data = JSON.parse(e.data);
+    setQrContact(data);
+    console.log(data);
     PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS, {
       title: 'Contacts',
       message: 'This app would like to view your contacts.',
       buttonPositive: 'Please accept bare mortal',
     })
       .then(
-        Contacts.addContact(newPerson),
+        Contacts.addContact(data),
         Linking.openURL(
-          'whatsapp://send?text=hello&phone=+55 (71) 982435206',
+          `whatsapp://send?text=Hello ${data.givenName}&phone=${data.phoneNumbers[0].number}`,
         ).catch(err => console.error('An error occured', err)),
       )
       .catch(e => {
@@ -229,9 +244,9 @@ function QrScanner() {
           </Text>
         }
       />
-      {qr != '' && (
+      {qrContact && (
         <TouchableOpacity style={styles.buttonTouchable}>
-          <Text style={styles.buttonText}>{qr}</Text>
+          <Text style={styles.buttonText}>{qrContact.givenName}</Text>
         </TouchableOpacity>
       )}
     </View>
