@@ -37,6 +37,7 @@ import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
 import Contacts from 'react-native-contacts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Clipboard from '@react-native-community/clipboard';
 
 function Home({navigation}) {
   const [name, setName] = useState('');
@@ -51,6 +52,7 @@ function Home({navigation}) {
     ],
   });
 
+  // revisar quando usar o getData //
   const getData = async () => {
     try {
       const jsonValue = await AsyncStorage.getItem('@user_contact');
@@ -131,6 +133,11 @@ function Home({navigation}) {
           }>
           <Text style={styles.textBold}>Go to QRGenerator</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={() => navigation.navigate('Scanner')}>
+          <Text style={styles.textBold}>Go to QRScanner</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -200,13 +207,16 @@ function QrGenerator({route, navigation}) {
 
 function QrScanner() {
   const [qrContact, setQrContact] = useState({
-    givenName: '',
-    phoneNumbers: [
-      {
-        label: 'mobile',
-        number: '',
-      },
-    ],
+    contact: {
+      givenName: '',
+      phoneNumbers: [
+        {
+          label: 'mobile',
+          number: '',
+        },
+      ],
+    },
+    instagram: '',
   });
 
   const onRead = e => {
@@ -222,9 +232,9 @@ function QrScanner() {
       buttonPositive: 'Please accept bare mortal',
     })
       .then(
-        Contacts.addContact(qrContact),
+        Contacts.addContact(qrContact.contact),
         Linking.openURL(
-          `whatsapp://send?text=Hello ${qrContact.givenName}&phone=${qrContact.phoneNumbers[0].number}`,
+          `whatsapp://send?text=Hello ${qrContact.contact.givenName}&phone=${qrContact.contact.phoneNumbers[0].number}`,
         ).catch(err => console.error('An error occured', err)),
       )
       .catch(e => {
@@ -243,7 +253,13 @@ function QrScanner() {
         </View>
         {qrContact && (
           <View style={styles.footer}>
-            <Text style={styles.centerText}>{qrContact.givenName}</Text>
+            <View style={{marginBottom: 20, marginTop: 20}}>
+              <Text style={styles.text}>{qrContact.contact.givenName}</Text>
+              <TouchableOpacity
+                onPress={() => Clipboard.setString(`${qrContact.instagram}`)}>
+                <Text style={styles.text}>{qrContact.instagram}</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.btn} onPress={saveContact}>
               <Text style={styles.textBold}>Save contact</Text>
             </TouchableOpacity>
