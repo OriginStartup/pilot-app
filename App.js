@@ -26,7 +26,12 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import QRCode from 'react-native-qrcode-svg';
-import {NavigationContainer} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+  useTheme,
+} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
@@ -45,18 +50,6 @@ function Home({navigation}) {
       },
     ],
   });
-
-  /* useEffect(() => {
-    const getData = async () => {
-      try {
-        const jsonValue = await AsyncStorage.getItem('@storage_Key')
-        return jsonValue != null ? JSON.parse(jsonValue) : null;
-      } catch(e) {
-        // error reading value
-    }
-  }
-
-  }); */
 
   const getData = async () => {
     try {
@@ -96,13 +89,20 @@ function Home({navigation}) {
   };
 
   return (
-    <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{fontSize: 18, color: 'black'}}>
-        Preencha os dados do seu contato para compartlhar com as pessoas.
-      </Text>
-      <Text style={{fontSize: 12, color: 'black'}}>
-        Você só precisa preencher uma vez.
-      </Text>
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <View style={{marginBottom: 40}}>
+        <Text style={{fontSize: 18, color: '#cecece', textAlign: 'center'}}>
+          Preencha os dados do seu contato para compartlhar com as pessoas.
+        </Text>
+        <Text style={{fontSize: 12, color: '#cecece', textAlign: 'center'}}>
+          Você só precisa preencher uma vez.
+        </Text>
+      </View>
       <TextInput
         style={styles.textInput}
         onChangeText={name => setName(name)}
@@ -118,18 +118,19 @@ function Home({navigation}) {
         placeholderTextColor={'#808080'}
       />
       <View style={{margin: 10}}>
-        <Button title="Salvar" onPress={saveMyContact} />
-        {/* test to see storage data */}
-        <Button title="Ver dados" onPress={seeData} />
-        <Button
-          title="Go to QRGenerator"
+        <TouchableOpacity style={styles.btn} onPress={saveMyContact}>
+          <Text style={styles.textBold}>Salvar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.btn}
           onPress={() =>
             navigation.navigate('Generator', {
               userName: myContact.givenName,
               userNumber: myContact.phoneNumbers[0].number,
             })
-          }
-        />
+          }>
+          <Text style={styles.textBold}>Go to QRGenerator</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -137,6 +138,7 @@ function Home({navigation}) {
 
 function QrGenerator({route, navigation}) {
   const {userName, userNumber} = route.params;
+
   const [qrValue, setQrValue] = useState({
     givenName: userName,
     phoneNumbers: [
@@ -147,48 +149,50 @@ function QrGenerator({route, navigation}) {
     ],
   });
 
+  const generateQrCode = () => {
+    console.log('gerar');
+    setQrValue({
+      givenName: userName,
+      phoneNumbers: [
+        {
+          label: 'mobile',
+          number: userNumber,
+        },
+      ],
+    });
+  };
+
   return (
     <SafeAreaView style={{flex: 1}}>
       <View style={styles.containerQr}>
         <QRCode
           value={JSON.stringify(qrValue)}
           size={250}
-          color={'black'}
+          color={'#7444d0'}
           backgroundColor="white"
-          logoSize={30}
-          logoMargin={2}
-          logoBorderRadius={15}
-          logoBackgroundColor="yellow"
         />
       </View>
-      <View style={styles.container}>
+      <View style={styles.containerBtn}>
         <Text style={styles.text}>{userName}</Text>
         <Text style={styles.text}>{userNumber}</Text>
-        <View style={{margin: 10}}>
-          <Button
-            onPress={() =>
-              setQrValue({
-                givenName: userName,
-                phoneNumbers: [
-                  {
-                    label: 'mobile',
-                    number: userNumber,
-                  },
-                ],
-              })
-            }
-            title="Gerar QR Code"
-          />
-          <Button
-            title="Go to Home"
-            onPress={() => navigation.navigate('Home')}
-          />
-          <Button
-            title="Go to QRScanner"
-            onPress={() => navigation.navigate('Scanner')}
-          />
-          <Button title="Go back" onPress={() => navigation.goBack()} />
-        </View>
+        <TouchableOpacity style={styles.btn} onPress={generateQrCode}>
+          <Text style={styles.textBold}>Gerar QR Code</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.textBold}>Go to Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={() => navigation.navigate('Scanner')}>
+          <Text style={styles.textBold}>Go to QRScanner</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={() => navigation.goBack()}>
+          <Text style={styles.textBold}>Go back</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -204,12 +208,6 @@ function QrScanner() {
       },
     ],
   });
-
-  const onSuccess = e => {
-    Linking.openURL(e.data).catch(err =>
-      console.error('An error occured', err),
-    );
-  };
 
   const onRead = e => {
     const data = JSON.parse(e.data);
@@ -246,7 +244,9 @@ function QrScanner() {
         {qrContact && (
           <View style={styles.footer}>
             <Text style={styles.centerText}>{qrContact.givenName}</Text>
-            <Button title="Save contact" onPress={saveContact} />
+            <TouchableOpacity style={styles.btn} onPress={saveContact}>
+              <Text style={styles.textBold}>Save contact</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -257,15 +257,10 @@ function QrScanner() {
 const Stack = createNativeStackNavigator();
 
 const App = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-    flex: 1,
-  };
+  const scheme = useColorScheme();
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Generator" component={QrGenerator} />
@@ -278,6 +273,12 @@ const App = () => {
 const styles = StyleSheet.create({
   containerQr: {
     flex: 1,
+    marginTop: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  containerBtn: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -288,36 +289,40 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 20,
     textAlign: 'center',
-    margin: 5,
-    color: '#000',
+    margin: 4,
+    color: '#777',
   },
   textInput: {
     flexDirection: 'row',
     height: 40,
     minWidth: 300,
-    marginTop: 20,
     marginLeft: 10,
     marginRight: 10,
     margin: 10,
+    padding: 12,
     borderWidth: 1,
-    color: '#000',
+    borderColor: '#7444d0',
+    borderRadius: 8,
+    color: '#fff',
   },
   centerText: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 20,
     padding: 32,
     color: '#777',
   },
   textBold: {
-    fontWeight: '500',
+    fontWeight: '700',
     color: '#000',
+    textAlign: 'center',
   },
-  buttonText: {
+  btn: {
     fontSize: 21,
-    color: 'rgb(0,122,255)',
-  },
-  buttonTouchable: {
-    padding: 16,
+    padding: 8,
+    margin: 4,
+    width: 140,
+    borderRadius: 8,
+    backgroundColor: '#7444d0',
   },
   footer: {
     flex: 1,
