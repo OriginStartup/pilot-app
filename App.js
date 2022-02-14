@@ -89,16 +89,19 @@ function Home({navigation}) {
       instagram: instagram,
     });
 
-    storeData(myContact);
     setName('');
     setNumber('');
     setInstagram('');
 
-    navigation.navigate('Generator', {
-      userName: myContact.contact.givenName,
-      userNumber: myContact.contact.phoneNumbers[0].number,
-      userInstagram: myContact.instagram,
-    });
+    // SAVE CONTACT INFO ON LOCAL STORAGE AND NAVEGATE TO GENERATOR (not working yet)
+    storeData(myContact);
+    /*
+      navigation.navigate('Generator', {
+        userName: myContact.contact.givenName,
+        userNumber: myContact.contact.phoneNumbers[0].number,
+        userInstagram: myContact.instagram,
+      });
+    */
   };
 
   const seeData = async () => {
@@ -304,10 +307,39 @@ const Stack = createNativeStackNavigator();
 
 const App = () => {
   const scheme = useColorScheme();
+  const [initialScreen, setInitialScreen] = useState('Home');
+  const [qrData, setQrData] = useState({});
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('@user_contact');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.log('Error traying to get local data from storage.');
+    }
+  };
+
+  useEffect(() => {
+    console.log('carregou');
+    const fetchData = async () => {
+      const data = await getData();
+      setQrData(data);
+      // if (qrData.contact.givenName !== '') setInitialScreen('Generator');
+    };
+
+    fetchData();
+
+    /*
+      Fetch contact info from api,
+      save and get contact info from local storage, (not working yet)
+      if user already has a contact info:
+      set nitialScreen to QrGenerator,
+    */
+  }, []);
 
   return (
     <NavigationContainer theme={scheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName={initialScreen}>
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Generator" component={QrGenerator} />
         <Stack.Screen name="Scanner" component={QrScanner} />
