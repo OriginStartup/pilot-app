@@ -8,7 +8,7 @@
  * @flow strict-local
  */
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -31,20 +31,110 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
 import Contacts from 'react-native-contacts';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function Home({navigation}) {
+  const [name, setName] = useState('');
+  const [number, setNumber] = useState('');
+  const [myContact, setMyContact] = useState({
+    givenName: name,
+    phoneNumbers: [
+      {
+        label: 'mobile',
+        number: number,
+      },
+    ],
+  });
+
+  /* useEffect(() => {
+    const getData = async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem('@storage_Key')
+        return jsonValue != null ? JSON.parse(jsonValue) : null;
+      } catch(e) {
+        // error reading value
+    }
+  }
+
+  }); */
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('@user_contact');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.log('Error traying to get local data from storage.');
+    }
+  };
+
+  const storeData = async value => {
+    try {
+      const jsonValue = JSON.stringify(value);
+      await AsyncStorage.setItem('@user_contact', jsonValue);
+    } catch (e) {
+      console.log('Error traying to store data.');
+    }
+  };
+
+  const saveMyContact = () => {
+    setMyContact({
+      givenName: name,
+      phoneNumbers: [
+        {
+          label: 'mobile',
+          number: number,
+        },
+      ],
+    });
+    storeData(myContact);
+    setName('');
+    setNumber('');
+  };
+
+  const seeData = async () => {
+    console.log(await getData());
+  };
+
   return (
     <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-      <Text>Home Screen</Text>
+      <Text style={{fontSize: 18, color: 'black'}}>
+        Preencha os dados do seu contato para compartlhar com as pessoas.
+      </Text>
+      <Text style={{fontSize: 12, color: 'black'}}>
+        Você só precisa preencher uma vez.
+      </Text>
+      <TextInput
+        style={styles.textInput}
+        onChangeText={name => setName(name)}
+        value={name}
+        placeholder="Digite seu nome"
+        placeholderTextColor={'#808080'}
+      />
+      <TextInput
+        style={styles.textInput}
+        onChangeText={number => setNumber(number)}
+        value={number}
+        placeholder="Digite seu numero"
+        placeholderTextColor={'#808080'}
+      />
+      <Button title="Salvar" onPress={saveMyContact} />
+      {/* test to see storage data */}
+      <Button title="Ver dados" onPress={seeData} />
       <Button
         title="Go to QRGenerator"
-        onPress={() => navigation.navigate('Generator')}
+        onPress={() =>
+          navigation.navigate('Generator', {
+            userName: myContact.givenName,
+            userNumber: myContact.phoneNumbers[0].number,
+          })
+        }
       />
     </View>
   );
 }
 
-function QrGenerator({navigation}) {
+function QrGenerator({route, navigation}) {
+  const {userName, userNumber} = route.params;
   const [inputText, setInputText] = useState('');
   const [qrValue, setQrValue] = useState('');
 
@@ -63,16 +153,13 @@ function QrGenerator({navigation}) {
         />
       </View>
       <View style={styles.container}>
-        <Text style={styles.text}>
-          Insira qualquer valor para gerar o QR Code
-        </Text>
-        <TextInput
-          style={styles.textInput}
-          onChangeText={inputText => setInputText(inputText)}
-          value={inputText}
-        />
+        <Text style={styles.text}>{userName}</Text>
+        <Text style={styles.text}>{userNumber}</Text>
         <View style={{margin: 10}}>
-          <Button onPress={() => setQrValue(inputText)} title="Gerar QR Code" />
+          <Button
+            onPress={() => setQrValue(userNumber)}
+            title="Gerar QR Code"
+          />
           <Button
             title="Go to Home"
             onPress={() => navigation.navigate('Home')}
@@ -186,15 +273,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     margin: 5,
+    color: '#000',
   },
   textInput: {
     flexDirection: 'row',
     height: 40,
+    minWidth: 300,
     marginTop: 20,
     marginLeft: 10,
     marginRight: 10,
     margin: 10,
     borderWidth: 1,
+    color: '#000',
   },
   centerText: {
     flex: 1,
