@@ -42,14 +42,18 @@ import Clipboard from '@react-native-community/clipboard';
 function Home({navigation}) {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [myContact, setMyContact] = useState({
-    givenName: name,
-    phoneNumbers: [
-      {
-        label: 'mobile',
-        number: number,
-      },
-    ],
+    contact: {
+      givenName: name,
+      phoneNumbers: [
+        {
+          label: 'mobile',
+          number: number,
+        },
+      ],
+    },
+    instagram: instagram,
   });
 
   // revisar quando usar o getData //
@@ -73,17 +77,28 @@ function Home({navigation}) {
 
   const saveMyContact = () => {
     setMyContact({
-      givenName: name,
-      phoneNumbers: [
-        {
-          label: 'mobile',
-          number: number,
-        },
-      ],
+      contact: {
+        givenName: name,
+        phoneNumbers: [
+          {
+            label: 'mobile',
+            number: number,
+          },
+        ],
+      },
+      instagram: instagram,
     });
+
     storeData(myContact);
     setName('');
     setNumber('');
+    setInstagram('');
+
+    navigation.navigate('Generator', {
+      userName: myContact.contact.givenName,
+      userNumber: myContact.contact.phoneNumbers[0].number,
+      userInstagram: myContact.instagram,
+    });
   };
 
   const seeData = async () => {
@@ -119,6 +134,13 @@ function Home({navigation}) {
         placeholder="Digite seu numero"
         placeholderTextColor={'#808080'}
       />
+      <TextInput
+        style={styles.textInput}
+        onChangeText={instagram => setInstagram(instagram)}
+        value={instagram}
+        placeholder="Digite seu instagram"
+        placeholderTextColor={'#808080'}
+      />
       <View style={{margin: 10}}>
         <TouchableOpacity style={styles.btn} onPress={saveMyContact}>
           <Text style={styles.textBold}>Salvar</Text>
@@ -127,8 +149,9 @@ function Home({navigation}) {
           style={styles.btn}
           onPress={() =>
             navigation.navigate('Generator', {
-              userName: myContact.givenName,
-              userNumber: myContact.phoneNumbers[0].number,
+              userName: myContact.contact.givenName,
+              userNumber: myContact.contact.phoneNumbers[0].number,
+              userInstagram: myContact.instagram,
             })
           }>
           <Text style={styles.textBold}>Go to QRGenerator</Text>
@@ -144,21 +167,10 @@ function Home({navigation}) {
 }
 
 function QrGenerator({route, navigation}) {
-  const {userName, userNumber} = route.params;
+  const {userName, userNumber, userInstagram} = route.params;
 
   const [qrValue, setQrValue] = useState({
-    givenName: userName,
-    phoneNumbers: [
-      {
-        label: 'mobile',
-        number: userNumber,
-      },
-    ],
-  });
-
-  const generateQrCode = () => {
-    console.log('gerar');
-    setQrValue({
+    contact: {
       givenName: userName,
       phoneNumbers: [
         {
@@ -166,6 +178,23 @@ function QrGenerator({route, navigation}) {
           number: userNumber,
         },
       ],
+    },
+    instagram: userInstagram,
+  });
+
+  const generateQrCode = () => {
+    console.log('gerar');
+    setQrValue({
+      contact: {
+        givenName: userName,
+        phoneNumbers: [
+          {
+            label: 'mobile',
+            number: userNumber,
+          },
+        ],
+      },
+      instagram: userInstagram,
     });
   };
 
@@ -181,6 +210,7 @@ function QrGenerator({route, navigation}) {
       </View>
       <View style={styles.containerBtn}>
         <Text style={styles.text}>{userName}</Text>
+        <Text style={styles.text}>{userInstagram}</Text>
         <Text style={styles.text}>{userNumber}</Text>
         <TouchableOpacity style={styles.btn} onPress={generateQrCode}>
           <Text style={styles.textBold}>Gerar QR Code</Text>
